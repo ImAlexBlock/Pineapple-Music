@@ -1,0 +1,14 @@
+services:
+  pineapple-music:
+    build: .
+    ports:
+      - "3880:3880"
+    volumes:
+      - pineapple-data:/app/data
+    environment:
+      - PM_PORT=3880
+      - GIN_MODE=release
+    restart: unless-stopped
+
+volumes:
+  pineapple-data:
