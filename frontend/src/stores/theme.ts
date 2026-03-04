@@ -1,23 +1,24 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import vuetify from '../plugins/vuetify'
+import { ref, watchEffect } from 'vue'
 
 export const useThemeStore = defineStore('theme', () => {
   const isDark = ref(false)
 
+  function applyTheme() {
+    document.documentElement.classList.toggle('dark', isDark.value)
+  }
+
   function toggle() {
     isDark.value = !isDark.value
-    vuetify.theme.global.name.value = isDark.value ? 'pineappleDark' : 'pineappleLight'
     localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+    applyTheme()
   }
 
   function init() {
     const saved = localStorage.getItem('theme')
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (saved === 'dark' || (!saved && prefersDark)) {
-      isDark.value = true
-      vuetify.theme.global.name.value = 'pineappleDark'
-    }
+    isDark.value = saved === 'dark' || (!saved && prefersDark)
+    applyTheme()
   }
 
   return { isDark, toggle, init }

@@ -1,55 +1,85 @@
 <template>
-  <v-container>
-    <h1 class="text-h4 mb-4">{{ t('admin.settings') }}</h1>
+  <div>
+    <h1 class="text-2xl font-bold mb-6">{{ t('admin.settings') }}</h1>
 
-    <v-card class="mb-4">
-      <v-card-title>{{ t('admin.rotateGuestKey') }}</v-card-title>
-      <v-card-text>
-        <p class="text-body-2 mb-2">{{ t('admin.rotateGuestKeyDesc') }}</p>
-        <v-alert v-if="newGuestKey" type="warning" class="mb-2">
-          {{ t('auth.saveKey') }}: <code>{{ newGuestKey }}</code>
-        </v-alert>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn color="warning" @click="rotateGuest">{{ t('admin.rotateGuestKey') }}</v-btn>
-      </v-card-actions>
-    </v-card>
+    <div class="space-y-4">
+      <!-- Rotate Guest Key -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-base">{{ t('admin.rotateGuestKey') }}</CardTitle>
+          <CardDescription>{{ t('admin.rotateGuestKeyDesc') }}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert v-if="newGuestKey" class="mb-4 border-warning bg-warning/10">
+            <AlertCircle class="h-4 w-4 text-warning" />
+            <AlertDescription>{{ t('auth.saveKey') }}: <code class="font-mono bg-muted px-1 rounded">{{ newGuestKey }}</code></AlertDescription>
+          </Alert>
+          <Button variant="outline" @click="rotateGuest">{{ t('admin.rotateGuestKey') }}</Button>
+        </CardContent>
+      </Card>
 
-    <v-card class="mb-4">
-      <v-card-title>{{ t('admin.rotateAdminKey') }}</v-card-title>
-      <v-card-text v-if="newAdminKey">
-        <v-alert type="warning">{{ t('auth.saveKey') }}: <code>{{ newAdminKey }}</code></v-alert>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn color="error" @click="rotateAdmin">{{ t('admin.rotateAdminKey') }}</v-btn>
-      </v-card-actions>
-    </v-card>
+      <!-- Rotate Admin Key -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-base">{{ t('admin.rotateAdminKey') }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert v-if="newAdminKey" class="mb-4 border-warning bg-warning/10">
+            <AlertCircle class="h-4 w-4 text-warning" />
+            <AlertDescription>{{ t('auth.saveKey') }}: <code class="font-mono bg-muted px-1 rounded">{{ newAdminKey }}</code></AlertDescription>
+          </Alert>
+          <Button variant="destructive" @click="rotateAdmin">{{ t('admin.rotateAdminKey') }}</Button>
+        </CardContent>
+      </Card>
 
-    <v-card class="mb-4">
-      <v-card-title>{{ t('admin.accessMode') }}</v-card-title>
-      <v-card-text>
-        <v-select
-          v-model="accessMode"
-          :items="['public', 'private']"
-          :label="t('admin.accessMode')"
-          @update:model-value="saveSetting('access_mode', accessMode)"
-        />
-      </v-card-text>
-    </v-card>
+      <!-- Access Mode -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-base">{{ t('admin.accessMode') }}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select v-model="accessMode" @update:model-value="(v: string) => saveSetting('access_mode', v)">
+            <SelectTrigger class="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="public">public</SelectItem>
+              <SelectItem value="private">private</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
 
-    <v-card>
-      <v-card-title>Subsonic Protocol</v-card-title>
-      <v-card-text>
-        <v-switch v-model="subsonicEnabled" label="Enable Subsonic API" @update:model-value="saveSetting('subsonic_enabled', subsonicEnabled ? 'true' : 'false')" />
-      </v-card-text>
-    </v-card>
-  </v-container>
+      <!-- Subsonic Protocol -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-base">Subsonic Protocol</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="flex items-center gap-3">
+            <Switch
+              :checked="subsonicEnabled"
+              @update:checked="(v: boolean) => { subsonicEnabled = v; saveSetting('subsonic_enabled', v ? 'true' : 'false') }"
+            />
+            <Label>Enable Subsonic API</Label>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminApi } from '../api'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { AlertCircle } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const newGuestKey = ref('')

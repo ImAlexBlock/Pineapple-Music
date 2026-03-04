@@ -1,51 +1,53 @@
 <template>
-  <v-container>
-    <div class="d-flex align-center mb-6">
-      <div>
-        <h1 class="text-h4 font-weight-bold">{{ t('nav.playlists') }}</h1>
-      </div>
-      <v-spacer />
-      <v-btn v-if="auth.role === 'admin'" color="primary" @click="showCreate = true">
-        <v-icon start>mdi-plus</v-icon>
+  <div>
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">{{ t('nav.playlists') }}</h1>
+      <Button v-if="auth.role === 'admin'" @click="showCreate = true">
+        <Plus class="mr-2 h-4 w-4" />
         {{ t('playlist.create') }}
-      </v-btn>
+      </Button>
     </div>
 
     <div v-if="playlists.length === 0" class="text-center py-12">
-      <v-icon size="64" color="medium-emphasis" class="mb-4">mdi-playlist-music-outline</v-icon>
-      <div class="text-h6 text-medium-emphasis">{{ t('playlist.empty') }}</div>
+      <ListMusic class="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+      <p class="text-lg text-muted-foreground">{{ t('playlist.empty') }}</p>
     </div>
 
-    <v-row>
-      <v-col v-for="pl in playlists" :key="pl.id" cols="12" sm="6" md="4">
-        <v-card :to="`/playlists/${pl.id}`" hover class="pa-4">
-          <div class="d-flex align-center">
-            <v-avatar color="primary" variant="tonal" rounded="lg" size="48" class="mr-3">
-              <v-icon>mdi-playlist-music</v-icon>
-            </v-avatar>
-            <div>
-              <div class="text-body-1 font-weight-medium">{{ pl.name }}</div>
-              <div class="text-caption text-medium-emphasis">{{ pl.created_at?.slice(0, 10) }}</div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <router-link v-for="pl in playlists" :key="pl.id" :to="`/playlists/${pl.id}`" class="block">
+        <Card class="p-4 hover:shadow-md transition-shadow cursor-pointer">
+          <div class="flex items-center gap-3">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <ListMusic class="h-6 w-6 text-primary" />
+            </div>
+            <div class="min-w-0">
+              <div class="font-medium truncate">{{ pl.name }}</div>
+              <div class="text-xs text-muted-foreground">{{ pl.created_at?.slice(0, 10) }}</div>
             </div>
           </div>
-        </v-card>
-      </v-col>
-    </v-row>
+        </Card>
+      </router-link>
+    </div>
 
-    <v-dialog v-model="showCreate" max-width="420">
-      <v-card class="pa-2">
-        <v-card-title class="text-h6">{{ t('playlist.create') }}</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="newName" :label="t('playlist.name')" autofocus @keyup.enter="createPlaylist" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showCreate = false">Cancel</v-btn>
-          <v-btn color="primary" variant="tonal" @click="createPlaylist">Create</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+    <!-- Create dialog -->
+    <Dialog v-model:open="showCreate">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('playlist.create') }}</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-4 py-4">
+          <div class="space-y-2">
+            <Label for="playlist-name">{{ t('playlist.name') }}</Label>
+            <Input id="playlist-name" v-model="newName" @keyup.enter="createPlaylist" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showCreate = false">Cancel</Button>
+          <Button @click="createPlaylist">Create</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -54,6 +56,12 @@ import { useI18n } from 'vue-i18n'
 import { playlistApi } from '../api'
 import { useAuthStore } from '../stores/auth'
 import type { Playlist } from '../types'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Plus, ListMusic } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const auth = useAuthStore()

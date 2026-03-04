@@ -1,48 +1,45 @@
 <template>
-  <v-container>
-    <div class="mb-6">
-      <h1 class="text-h4 font-weight-bold mb-4">{{ t('nav.search') }}</h1>
-      <v-text-field
+  <div>
+    <h1 class="text-2xl font-bold mb-4">{{ t('nav.search') }}</h1>
+    <div class="flex gap-2 mb-6">
+      <Input
         v-model="query"
         :placeholder="t('search.placeholder')"
-        prepend-inner-icon="mdi-magnify"
-        clearable
+        class="flex-1"
         autofocus
         @keyup.enter="doSearch"
       />
+      <Button @click="doSearch">
+        <SearchIcon class="h-4 w-4" />
+      </Button>
     </div>
 
     <div v-if="results.length === 0 && searched" class="text-center py-12">
-      <v-icon size="64" color="medium-emphasis" class="mb-4">mdi-magnify-close</v-icon>
-      <div class="text-h6 text-medium-emphasis">{{ t('search.noResults') }}</div>
+      <SearchIcon class="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+      <p class="text-lg text-muted-foreground">{{ t('search.noResults') }}</p>
     </div>
 
-    <v-list v-if="results.length > 0" lines="two">
-      <v-list-item
+    <div v-if="results.length > 0" class="space-y-1">
+      <button
         v-for="track in results"
         :key="track.id"
-        rounded="lg"
-        class="mb-1"
+        class="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent"
         @click="playTrack(track)"
       >
-        <template #prepend>
-          <v-avatar v-if="track.has_cover" size="44" rounded="lg" class="mr-3">
-            <v-img :src="`/api/v1/tracks/${track.id}/cover`" cover />
-          </v-avatar>
-          <v-avatar v-else size="44" rounded="lg" color="primary" variant="tonal" class="mr-3">
-            <v-icon>mdi-music-note</v-icon>
-          </v-avatar>
-        </template>
-        <v-list-item-title class="font-weight-medium">{{ track.title }}</v-list-item-title>
-        <v-list-item-subtitle>{{ track.artist }} - {{ track.album }}</v-list-item-subtitle>
-        <template #append>
-          <v-btn icon size="small" variant="text" color="primary">
-            <v-icon>mdi-play-circle-outline</v-icon>
-          </v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
-  </v-container>
+        <Avatar class="h-11 w-11 shrink-0 rounded-lg">
+          <AvatarImage v-if="track.has_cover" :src="`/api/v1/tracks/${track.id}/cover`" />
+          <AvatarFallback class="rounded-lg bg-primary/10">
+            <Music class="h-5 w-5 text-primary" />
+          </AvatarFallback>
+        </Avatar>
+        <div class="min-w-0 flex-1">
+          <div class="truncate text-sm font-medium">{{ track.title }}</div>
+          <div class="truncate text-xs text-muted-foreground">{{ track.artist }} - {{ track.album }}</div>
+        </div>
+        <Play class="h-5 w-5 shrink-0 text-primary" />
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -51,6 +48,10 @@ import { useI18n } from 'vue-i18n'
 import { trackApi } from '../api'
 import { usePlayerStore } from '../stores/player'
 import type { Track } from '../types'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Search as SearchIcon, Music, Play } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const player = usePlayerStore()

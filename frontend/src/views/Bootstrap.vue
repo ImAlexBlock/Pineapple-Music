@@ -1,33 +1,31 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <v-row align="center" justify="center">
-      <v-col cols="12" sm="8" md="4">
-        <v-card class="pa-6" elevation="8">
-          <v-card-title class="text-center text-h4 mb-4">🍍</v-card-title>
-          <v-card-subtitle class="text-center text-h6">{{ t('auth.setupTitle') }}</v-card-subtitle>
-          <v-card-text class="text-center">{{ t('auth.setupDesc') }}</v-card-text>
-
-          <v-card-text v-if="done">
-            <v-alert type="success" prominent>
-              <div class="text-body-1 font-weight-bold mb-2">{{ t('auth.bootstrapDone') }}</div>
-              <div class="text-body-2">{{ t('auth.checkConsole') }}</div>
-            </v-alert>
-            <v-btn block color="primary" class="mt-4" @click="goToLogin">{{ t('auth.login') }}</v-btn>
-          </v-card-text>
-
-          <v-card-actions v-else>
-            <v-btn block color="primary" size="large" :loading="loading" @click="doBootstrap">
-              {{ t('auth.bootstrap') }}
-            </v-btn>
-          </v-card-actions>
-
-          <v-card-text v-if="error">
-            <v-alert type="error">{{ error }}</v-alert>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+  <div class="flex min-h-[calc(100vh-3rem)] items-center justify-center p-4">
+    <Card class="w-full max-w-sm">
+      <CardHeader class="text-center">
+        <div class="text-4xl mb-2">🍍</div>
+        <CardTitle class="text-xl">{{ t('auth.setupTitle') }}</CardTitle>
+        <CardDescription>{{ t('auth.setupDesc') }}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <template v-if="done">
+          <Alert variant="default" class="mb-4 border-success bg-success/10">
+            <CheckCircle class="h-4 w-4 text-success" />
+            <AlertTitle>{{ t('auth.bootstrapDone') }}</AlertTitle>
+            <AlertDescription>{{ t('auth.checkConsole') }}</AlertDescription>
+          </Alert>
+          <Button class="w-full" @click="goToLogin">{{ t('auth.login') }}</Button>
+        </template>
+        <Button v-else class="w-full" size="lg" :disabled="loading" @click="doBootstrap">
+          <Loader2 v-if="loading" class="mr-2 h-4 w-4 animate-spin" />
+          {{ t('auth.bootstrap') }}
+        </Button>
+        <Alert v-if="error" variant="destructive" class="mt-4">
+          <AlertCircle class="h-4 w-4" />
+          <AlertDescription>{{ error }}</AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -35,6 +33,10 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { CheckCircle, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const router = useRouter()

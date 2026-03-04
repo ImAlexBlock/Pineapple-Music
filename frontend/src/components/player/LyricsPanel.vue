@@ -1,37 +1,29 @@
 <template>
-  <v-navigation-drawer
-    v-model="player.lyricsVisible"
-    location="right"
-    temporary
-    width="400"
-  >
-    <v-card flat>
-      <v-card-title class="d-flex align-center">
-        <span>{{ t('player.lyrics') }}</span>
-        <v-spacer />
-        <v-btn icon size="small" @click="player.toggleLyrics()">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-card-title>
-      <v-card-text>
-        <div v-if="!lyrics" class="text-center text-medium-emphasis">
+  <Sheet v-model:open="player.lyricsVisible">
+    <SheetContent side="right" class="w-[400px] p-0 flex flex-col">
+      <SheetHeader class="p-4 pb-2 flex flex-row items-center justify-between shrink-0">
+        <SheetTitle>{{ t('player.lyrics') }}</SheetTitle>
+        <SheetDescription class="sr-only">Song lyrics panel</SheetDescription>
+      </SheetHeader>
+      <ScrollArea class="flex-1 px-4 pb-4">
+        <div v-if="!lyrics" class="text-center text-muted-foreground py-8">
           {{ t('player.noLyrics') }}
         </div>
-        <div v-else-if="lyrics.type === 'synced'" class="lyrics-synced">
+        <div v-else-if="lyrics.type === 'synced'" class="space-y-1">
           <div
             v-for="(line, i) in parsedLines"
             :key="i"
-            :class="{ 'lyrics-active': isActiveLine(i) }"
-            class="lyrics-line"
+            class="cursor-pointer rounded px-2 py-1 transition-all text-sm"
+            :class="isActiveLine(i) ? 'text-primary font-bold text-base' : 'text-muted-foreground'"
             @click="player.seek(line.time)"
           >
             {{ line.text }}
           </div>
         </div>
-        <pre v-else class="lyrics-plain">{{ lyrics.content }}</pre>
-      </v-card-text>
-    </v-card>
-  </v-navigation-drawer>
+        <pre v-else class="whitespace-pre-wrap font-sans text-sm">{{ lyrics.content }}</pre>
+      </ScrollArea>
+    </SheetContent>
+  </Sheet>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +32,8 @@ import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/player'
 import { trackApi } from '../../api'
 import type { TrackLyric } from '../../types'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const { t } = useI18n()
 const player = usePlayerStore()
@@ -95,22 +89,3 @@ watch(() => player.currentTrack?.id, async (id) => {
   }
 })
 </script>
-
-<style scoped>
-.lyrics-line {
-  padding: 4px 0;
-  cursor: pointer;
-  transition: all 0.3s;
-  opacity: 0.5;
-}
-.lyrics-active {
-  opacity: 1;
-  font-weight: bold;
-  color: rgb(var(--v-theme-primary));
-  font-size: 1.1em;
-}
-.lyrics-plain {
-  white-space: pre-wrap;
-  font-family: inherit;
-}
-</style>

@@ -1,48 +1,41 @@
 <template>
-  <v-container>
-    <div class="d-flex align-center mb-6">
-      <v-btn icon variant="text" @click="$router.back()">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <h1 class="text-h4 font-weight-bold ml-2">{{ playlist?.name }}</h1>
-      <v-spacer />
-      <v-btn v-if="auth.role === 'admin'" icon variant="text" color="error" @click="deletePlaylist">
-        <v-icon>mdi-delete-outline</v-icon>
-        <v-tooltip activator="parent" location="bottom">{{ t('playlist.delete') }}</v-tooltip>
-      </v-btn>
+  <div>
+    <div class="flex items-center gap-2 mb-6">
+      <Button variant="ghost" size="icon" @click="$router.back()">
+        <ArrowLeft class="h-5 w-5" />
+      </Button>
+      <h1 class="text-2xl font-bold flex-1">{{ playlist?.name }}</h1>
+      <Button v-if="auth.role === 'admin'" variant="ghost" size="icon" class="text-destructive" @click="deletePlaylist">
+        <Trash2 class="h-5 w-5" />
+      </Button>
     </div>
 
     <div v-if="!playlist?.tracks?.length" class="text-center py-12">
-      <v-icon size="64" color="medium-emphasis" class="mb-4">mdi-playlist-music-outline</v-icon>
-      <div class="text-h6 text-medium-emphasis">{{ t('playlist.empty') }}</div>
+      <ListMusic class="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+      <p class="text-lg text-muted-foreground">{{ t('playlist.empty') }}</p>
     </div>
 
-    <v-list v-else lines="two">
-      <v-list-item
+    <div v-else class="space-y-1">
+      <button
         v-for="pt in playlist.tracks"
         :key="pt.id"
-        rounded="lg"
-        class="mb-1"
+        class="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent"
         @click="playTrack(pt.track)"
       >
-        <template #prepend>
-          <v-avatar v-if="pt.track.has_cover" size="44" rounded="lg" class="mr-3">
-            <v-img :src="`/api/v1/tracks/${pt.track.id}/cover`" cover />
-          </v-avatar>
-          <v-avatar v-else size="44" rounded="lg" color="primary" variant="tonal" class="mr-3">
-            <v-icon>mdi-music-note</v-icon>
-          </v-avatar>
-        </template>
-        <v-list-item-title class="font-weight-medium">{{ pt.track.title }}</v-list-item-title>
-        <v-list-item-subtitle>{{ pt.track.artist }}</v-list-item-subtitle>
-        <template #append>
-          <v-btn icon size="small" variant="text" color="primary" @click.stop="playTrack(pt.track)">
-            <v-icon>mdi-play-circle-outline</v-icon>
-          </v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
-  </v-container>
+        <Avatar class="h-11 w-11 shrink-0 rounded-lg">
+          <AvatarImage v-if="pt.track.has_cover" :src="`/api/v1/tracks/${pt.track.id}/cover`" />
+          <AvatarFallback class="rounded-lg bg-primary/10">
+            <Music class="h-5 w-5 text-primary" />
+          </AvatarFallback>
+        </Avatar>
+        <div class="min-w-0 flex-1">
+          <div class="truncate text-sm font-medium">{{ pt.track.title }}</div>
+          <div class="truncate text-xs text-muted-foreground">{{ pt.track.artist }}</div>
+        </div>
+        <Play class="h-5 w-5 shrink-0 text-primary" />
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -53,6 +46,9 @@ import { playlistApi } from '../api'
 import { useAuthStore } from '../stores/auth'
 import { usePlayerStore } from '../stores/player'
 import type { Playlist, Track } from '../types'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ArrowLeft, Trash2, ListMusic, Music, Play } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const route = useRoute()

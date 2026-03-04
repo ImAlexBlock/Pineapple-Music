@@ -1,61 +1,93 @@
 <template>
-  <v-container>
-    <div class="d-flex align-center mb-6">
-      <div>
-        <h1 class="text-h4 font-weight-bold">{{ t('nav.tracks') }}</h1>
-        <p class="text-body-2 text-medium-emphasis mt-1" v-if="total > 0">{{ total }} tracks</p>
-      </div>
+  <div>
+    <div class="mb-4">
+      <h1 class="text-2xl font-bold">{{ t('nav.tracks') }}</h1>
+      <p v-if="total > 0" class="text-sm text-muted-foreground mt-1">{{ total }} tracks</p>
     </div>
 
-    <v-text-field
+    <Input
       v-model="search"
       :placeholder="t('search.placeholder')"
-      prepend-inner-icon="mdi-magnify"
-      clearable
       class="mb-4"
-      @update:model-value="debouncedLoad"
+      @input="debouncedLoad"
     />
 
-    <v-data-table-server
-      :headers="headers"
-      :items="tracks"
-      :items-length="total"
-      :loading="loading"
-      :items-per-page="50"
-      hover
-      @update:options="loadTracks"
-    >
-      <template #item.title="{ item }">
-        <div class="d-flex align-center py-1">
-          <v-avatar v-if="item.has_cover" size="40" rounded="lg" class="mr-3 flex-shrink-0">
-            <v-img :src="coverUrl(item.id)" cover />
-          </v-avatar>
-          <v-avatar v-else size="40" rounded="lg" color="primary" variant="tonal" class="mr-3 flex-shrink-0">
-            <v-icon size="20">mdi-music-note</v-icon>
-          </v-avatar>
-          <div class="text-truncate">
-            <div class="text-body-2 font-weight-medium">{{ item.title }}</div>
-          </div>
-        </div>
-      </template>
-      <template #item.duration="{ item }">
-        <span class="text-caption text-medium-emphasis">{{ formatDuration(item.duration) }}</span>
-      </template>
-      <template #item.actions="{ item }">
-        <v-btn icon size="small" variant="text" color="primary" @click="playTrack(item)">
-          <v-icon>mdi-play-circle-outline</v-icon>
-        </v-btn>
-      </template>
-    </v-data-table-server>
-  </v-container>
+    <div class="rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="w-[40%]">{{ t('track.title') }}</TableHead>
+            <TableHead>{{ t('track.artist') }}</TableHead>
+            <TableHead>{{ t('track.album') }}</TableHead>
+            <TableHead class="w-20">{{ t('track.duration') }}</TableHead>
+            <TableHead class="w-12"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="loading">
+            <TableCell :colspan="5" class="text-center py-8">
+              <Loader2 class="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="tracks.length === 0">
+            <TableCell :colspan="5" class="text-center py-8 text-muted-foreground">
+              No tracks found
+            </TableCell>
+          </TableRow>
+          <TableRow
+            v-for="track in tracks"
+            :key="track.id"
+            class="cursor-pointer"
+            @click="playTrack(track)"
+          >
+            <TableCell>
+              <div class="flex items-center gap-3">
+                <Avatar class="h-10 w-10 shrink-0 rounded-lg">
+                  <AvatarImage v-if="track.has_cover" :src="coverUrl(track.id)" />
+                  <AvatarFallback class="rounded-lg bg-primary/10">
+                    <Music class="h-4 w-4 text-primary" />
+                  </AvatarFallback>
+                </Avatar>
+                <span class="truncate text-sm font-medium">{{ track.title }}</span>
+              </div>
+            </TableCell>
+            <TableCell class="text-sm">{{ track.artist }}</TableCell>
+            <TableCell class="text-sm">{{ track.album }}</TableCell>
+            <TableCell class="text-xs text-muted-foreground">{{ formatDuration(track.duration) }}</TableCell>
+            <TableCell>
+              <Button variant="ghost" size="icon" class="h-8 w-8" @click.stop="playTrack(track)">
+                <Play class="h-4 w-4 text-primary" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-4">
+      <Button variant="outline" size="sm" :disabled="page <= 1" @click="goToPage(page - 1)">
+        <ArrowLeft class="h-4 w-4" />
+      </Button>
+      <span class="text-sm text-muted-foreground">{{ page }} / {{ totalPages }}</span>
+      <Button variant="outline" size="sm" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+        <ArrowRight class="h-4 w-4" />
+      </Button>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { trackApi } from '../api'
 import { usePlayerStore } from '../stores/player'
 import type { Track } from '../types'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Music, Play, ArrowLeft, ArrowRight, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const player = usePlayerStore()
@@ -63,27 +95,33 @@ const tracks = ref<Track[]>([])
 const total = ref(0)
 const loading = ref(false)
 const search = ref('')
+const page = ref(1)
+const perPage = 50
 
-const headers = computed(() => [
-  { title: t('track.title'), key: 'title', sortable: false },
-  { title: t('track.artist'), key: 'artist', sortable: false },
-  { title: t('track.album'), key: 'album', sortable: false },
-  { title: t('track.duration'), key: 'duration', sortable: false, width: '80px' },
-  { title: '', key: 'actions', sortable: false, width: '50px' },
-])
+const totalPages = computed(() => Math.ceil(total.value / perPage))
+
+onMounted(() => loadTracks())
 
 let debounceTimer: ReturnType<typeof setTimeout>
 function debouncedLoad() {
   clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => loadTracks({ page: 1, itemsPerPage: 50 }), 300)
+  debounceTimer = setTimeout(() => {
+    page.value = 1
+    loadTracks()
+  }, 300)
 }
 
-async function loadTracks(options: { page: number; itemsPerPage: number }) {
+function goToPage(p: number) {
+  page.value = p
+  loadTracks()
+}
+
+async function loadTracks() {
   loading.value = true
   try {
     const { data } = await trackApi.list({
-      offset: (options.page - 1) * options.itemsPerPage,
-      limit: options.itemsPerPage,
+      offset: (page.value - 1) * perPage,
+      limit: perPage,
       q: search.value || undefined,
     })
     tracks.value = data.items || []

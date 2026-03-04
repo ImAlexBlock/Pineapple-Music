@@ -23,10 +23,10 @@ export const usePlayerStore = defineStore('player', () => {
 
   const playModeIcon = computed(() => {
     switch (playMode.value) {
-      case 'sequential': return 'mdi-arrow-right'
-      case 'repeat-all': return 'mdi-repeat'
-      case 'repeat-one': return 'mdi-repeat-once'
-      case 'shuffle': return 'mdi-shuffle-variant'
+      case 'sequential': return 'ArrowRight'
+      case 'repeat-all': return 'Repeat'
+      case 'repeat-one': return 'Repeat1'
+      case 'shuffle': return 'Shuffle'
     }
   })
 

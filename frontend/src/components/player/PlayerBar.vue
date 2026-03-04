@@ -1,91 +1,110 @@
 <template>
-  <v-slide-y-reverse-transition>
-    <v-footer v-if="player.currentTrack" app class="pa-0" style="z-index: 100;">
-      <v-card width="100%" flat rounded="0" class="player-bar" color="surface">
-        <!-- Progress bar -->
-        <v-progress-linear
-          :model-value="progress"
-          color="primary"
-          height="3"
-          class="cursor-pointer"
-          @click="seekFromProgress"
+  <Transition name="player">
+    <div v-if="player.currentTrack" class="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <!-- Progress bar (clickable) -->
+      <div
+        class="h-1 w-full cursor-pointer bg-muted group"
+        @click="seekFromProgress"
+      >
+        <div
+          class="h-full bg-primary transition-all"
+          :style="{ width: `${progress}%` }"
         />
-        <div class="d-flex align-center px-3 py-2 ga-2">
-          <!-- Track info -->
-          <div class="d-flex align-center flex-shrink-0" style="min-width: 180px; max-width: 280px;">
-            <v-avatar v-if="player.currentTrack.has_cover" size="44" rounded="lg" class="mr-3 flex-shrink-0">
-              <v-img :src="`/api/v1/tracks/${player.currentTrack.id}/cover`" cover />
-            </v-avatar>
-            <v-avatar v-else size="44" rounded="lg" color="primary" variant="tonal" class="mr-3 flex-shrink-0">
-              <v-icon>mdi-music-note</v-icon>
-            </v-avatar>
-            <div class="overflow-hidden">
-              <div class="text-body-2 font-weight-medium text-truncate">{{ player.currentTrack.title }}</div>
-              <div class="text-caption text-medium-emphasis text-truncate">{{ player.currentTrack.artist }}</div>
-            </div>
-          </div>
+      </div>
 
-          <v-spacer />
-
-          <!-- Controls (center) -->
-          <div class="d-flex align-center ga-1">
-            <v-btn icon variant="text" size="small" @click="player.cyclePlayMode()" density="comfortable">
-              <v-icon :color="player.playMode !== 'sequential' ? 'primary' : undefined" size="20">{{ player.playModeIcon }}</v-icon>
-              <v-tooltip activator="parent" location="top">{{ player.playModeLabel }}</v-tooltip>
-            </v-btn>
-            <v-btn icon variant="text" size="small" @click="player.previous()" density="comfortable">
-              <v-icon size="22">mdi-skip-previous</v-icon>
-            </v-btn>
-            <v-btn icon color="primary" size="44" @click="player.togglePlay()" elevation="0">
-              <v-icon size="28">{{ player.playing ? 'mdi-pause' : 'mdi-play' }}</v-icon>
-            </v-btn>
-            <v-btn icon variant="text" size="small" @click="player.next()" density="comfortable">
-              <v-icon size="22">mdi-skip-next</v-icon>
-            </v-btn>
-            <v-btn icon variant="text" size="small" @click="player.toggleLyrics()" density="comfortable">
-              <v-icon :color="player.lyricsVisible ? 'primary' : undefined" size="20">mdi-text</v-icon>
-              <v-tooltip activator="parent" location="top">Lyrics</v-tooltip>
-            </v-btn>
-          </div>
-
-          <v-spacer />
-
-          <!-- Time + Volume (right) -->
-          <div class="d-flex align-center ga-2 flex-shrink-0" style="min-width: 180px; justify-content: flex-end;">
-            <span class="text-caption text-medium-emphasis text-no-wrap">
-              {{ formatTime(player.currentTime) }} / {{ formatTime(player.duration) }}
-            </span>
-            <v-icon size="18" class="text-medium-emphasis">
-              {{ player.volume === 0 ? 'mdi-volume-off' : player.volume < 0.5 ? 'mdi-volume-medium' : 'mdi-volume-high' }}
-            </v-icon>
-            <v-slider
-              :model-value="player.volume"
-              min="0"
-              max="1"
-              step="0.01"
-              hide-details
-              density="compact"
-              color="primary"
-              track-color="surface-variant"
-              style="max-width: 90px;"
-              @update:model-value="(v: number) => player.setVolume(v)"
-            />
+      <div class="flex items-center gap-2 px-3 py-2">
+        <!-- Track info (left) -->
+        <div class="flex items-center gap-3 min-w-0 w-[180px] max-w-[280px] shrink-0">
+          <Avatar class="h-11 w-11 shrink-0 rounded-lg">
+            <AvatarImage v-if="player.currentTrack.has_cover" :src="`/api/v1/tracks/${player.currentTrack.id}/cover`" />
+            <AvatarFallback class="rounded-lg bg-primary/10">
+              <Music class="h-5 w-5 text-primary" />
+            </AvatarFallback>
+          </Avatar>
+          <div class="min-w-0">
+            <div class="text-sm font-medium truncate">{{ player.currentTrack.title }}</div>
+            <div class="text-xs text-muted-foreground truncate">{{ player.currentTrack.artist }}</div>
           </div>
         </div>
-      </v-card>
-    </v-footer>
-  </v-slide-y-reverse-transition>
+
+        <div class="flex-1" />
+
+        <!-- Controls (center) -->
+        <div class="flex items-center gap-1">
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="player.cyclePlayMode()">
+            <component
+              :is="playModeIconComponent"
+              class="h-4 w-4"
+              :class="player.playMode !== 'sequential' ? 'text-primary' : ''"
+            />
+          </Button>
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="player.previous()">
+            <SkipBack class="h-5 w-5" />
+          </Button>
+          <Button size="icon" class="h-10 w-10 rounded-full" @click="player.togglePlay()">
+            <Pause v-if="player.playing" class="h-5 w-5" />
+            <Play v-else class="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="player.next()">
+            <SkipForward class="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" class="h-8 w-8" @click="player.toggleLyrics()">
+            <Type class="h-4 w-4" :class="player.lyricsVisible ? 'text-primary' : ''" />
+          </Button>
+        </div>
+
+        <div class="flex-1" />
+
+        <!-- Time + Volume (right) -->
+        <div class="flex items-center gap-2 shrink-0 w-[180px] justify-end">
+          <span class="text-xs text-muted-foreground whitespace-nowrap">
+            {{ formatTime(player.currentTime) }} / {{ formatTime(player.duration) }}
+          </span>
+          <component :is="volumeIcon" class="h-4 w-4 text-muted-foreground shrink-0" />
+          <Slider
+            :model-value="[player.volume]"
+            :min="0"
+            :max="1"
+            :step="0.01"
+            class="w-[80px]"
+            @update:model-value="(v: number[]) => player.setVolume(v[0])"
+          />
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { usePlayerStore } from '../../stores/player'
+import { Button } from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  Music, Play, Pause, SkipBack, SkipForward, Type,
+  ArrowRight, Repeat, Repeat1, Shuffle,
+  Volume2, Volume1, VolumeX,
+} from 'lucide-vue-next'
 
 const player = usePlayerStore()
 
 const progress = computed(() => {
   if (!player.duration) return 0
   return (player.currentTime / player.duration) * 100
+})
+
+const playModeIconComponent = computed(() => {
+  const map: Record<string, typeof ArrowRight> = {
+    ArrowRight, Repeat, Repeat1, Shuffle,
+  }
+  return map[player.playModeIcon] || ArrowRight
+})
+
+const volumeIcon = computed(() => {
+  if (player.volume === 0) return VolumeX
+  if (player.volume < 0.5) return Volume1
+  return Volume2
 })
 
 function seekFromProgress(e: MouseEvent) {
@@ -102,12 +121,3 @@ function formatTime(sec: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 </script>
-
-<style scoped>
-.player-bar {
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-.cursor-pointer {
-  cursor: pointer;
-}
-</style>
