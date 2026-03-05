@@ -92,6 +92,11 @@ func ExtractMetadata(filePath string) (*TrackMeta, error) {
 		meta.Title = strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
 	}
 
+	// Probe audio duration if not available from tags
+	if meta.Duration == 0 {
+		meta.Duration = ProbeAudioDuration(filePath, meta.Format, meta.Size)
+	}
+
 	return meta, nil
 }
 

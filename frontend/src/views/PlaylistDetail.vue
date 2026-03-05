@@ -22,12 +22,10 @@
         class="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-accent"
         @click="playTrack(pt.track)"
       >
-        <Avatar class="h-11 w-11 shrink-0 rounded-lg">
-          <AvatarImage v-if="pt.track.has_cover" :src="`/api/v1/tracks/${pt.track.id}/cover`" />
-          <AvatarFallback class="rounded-lg bg-primary/10">
-            <Music class="h-5 w-5 text-primary" />
-          </AvatarFallback>
-        </Avatar>
+        <div class="h-11 w-11 shrink-0 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center">
+          <img v-if="pt.track.has_cover" :src="`/api/v1/tracks/${pt.track.id}/cover`" loading="lazy" class="h-full w-full object-cover" />
+          <Music v-else class="h-5 w-5 text-primary" />
+        </div>
         <div class="min-w-0 flex-1">
           <div class="truncate text-sm font-medium">{{ pt.track.title }}</div>
           <div class="truncate text-xs text-muted-foreground">{{ pt.track.artist }}</div>
@@ -47,7 +45,6 @@ import { useAuthStore } from '../stores/auth'
 import { usePlayerStore } from '../stores/player'
 import type { Playlist, Track } from '../types'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Trash2, ListMusic, Music, Play } from 'lucide-vue-next'
 
 const { t } = useI18n()

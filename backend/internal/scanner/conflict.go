@@ -14,7 +14,8 @@ func CheckConflict(db *gorm.DB, meta *TrackMeta) (*model.Track, string) {
 	// Check by file path
 	var existing model.Track
 	if err := silent.Where("file_path = ?", meta.FilePath).First(&existing).Error; err == nil {
-		if existing.FileHash == meta.FileHash {
+		// Treat as "updated" if hash changed OR if duration was missing
+		if existing.FileHash == meta.FileHash && existing.Duration > 0 {
 			return &existing, "unchanged"
 		}
 		return &existing, "updated"

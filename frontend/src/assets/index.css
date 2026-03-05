@@ -259,12 +259,13 @@
 
 /* Player slide-in transition */
 .player-enter-active {
-  transition: transform 0.3s ease-out;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
 .player-leave-active {
-  transition: transform 0.2s ease-in;
+  transition: transform 0.2s ease-in, opacity 0.2s ease-in;
 }
 .player-enter-from,
 .player-leave-to {
   transform: translateY(100%);
+  opacity: 0;
 }

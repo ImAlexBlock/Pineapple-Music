@@ -42,12 +42,10 @@
           >
             <TableCell>
               <div class="flex items-center gap-3">
-                <Avatar class="h-10 w-10 shrink-0 rounded-lg">
-                  <AvatarImage v-if="track.has_cover" :src="coverUrl(track.id)" />
-                  <AvatarFallback class="rounded-lg bg-primary/10">
-                    <Music class="h-4 w-4 text-primary" />
-                  </AvatarFallback>
-                </Avatar>
+                <div class="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center">
+                  <img v-if="track.has_cover" :src="coverUrl(track.id)" loading="lazy" class="h-full w-full object-cover" />
+                  <Music v-else class="h-4 w-4 text-primary" />
+                </div>
                 <span class="truncate text-sm font-medium">{{ track.title }}</span>
               </div>
             </TableCell>
@@ -86,7 +84,6 @@ import type { Track } from '../types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Music, Play, ArrowLeft, ArrowRight, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
