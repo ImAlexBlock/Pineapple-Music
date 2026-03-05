@@ -5,13 +5,6 @@
       <p v-if="total > 0" class="text-sm text-muted-foreground mt-1">{{ total }} tracks</p>
     </div>
 
-    <Input
-      v-model="search"
-      :placeholder="t('search.placeholder')"
-      class="mb-4"
-      @input="debouncedLoad"
-    />
-
     <div class="rounded-lg border">
       <Table>
         <TableHeader>
@@ -37,16 +30,27 @@
           <TableRow
             v-for="track in tracks"
             :key="track.id"
-            class="cursor-pointer"
+            class="cursor-pointer transition-colors"
+            :class="player.currentTrack?.id === track.id ? 'bg-primary/10' : ''"
             @click="playTrack(track)"
           >
             <TableCell>
               <div class="flex items-center gap-3">
-                <div class="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center">
-                  <img v-if="track.has_cover" :src="coverUrl(track.id)" loading="lazy" class="h-full w-full object-cover" />
-                  <Music v-else class="h-4 w-4 text-primary" />
+                <div class="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center relative">
+                  <template v-if="player.currentTrack?.id === track.id && player.playing">
+                    <img v-if="track.has_cover" :src="coverUrl(track.id)" loading="lazy" class="h-full w-full object-cover" />
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
+                      <span class="now-playing-bars">
+                        <span /><span /><span />
+                      </span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <img v-if="track.has_cover" :src="coverUrl(track.id)" loading="lazy" class="h-full w-full object-cover" />
+                    <Music v-if="!track.has_cover" class="h-4 w-4 text-primary" />
+                  </template>
                 </div>
-                <span class="truncate text-sm font-medium">{{ track.title }}</span>
+                <span class="truncate text-sm font-medium" :class="player.currentTrack?.id === track.id ? 'text-primary' : ''">{{ track.title }}</span>
               </div>
             </TableCell>
             <TableCell class="text-sm">{{ track.artist }}</TableCell>
@@ -83,7 +87,6 @@ import { usePlayerStore } from '../stores/player'
 import type { Track } from '../types'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Music, Play, ArrowLeft, ArrowRight, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -91,22 +94,12 @@ const player = usePlayerStore()
 const tracks = ref<Track[]>([])
 const total = ref(0)
 const loading = ref(false)
-const search = ref('')
 const page = ref(1)
 const perPage = 50
 
 const totalPages = computed(() => Math.ceil(total.value / perPage))
 
 onMounted(() => loadTracks())
-
-let debounceTimer: ReturnType<typeof setTimeout>
-function debouncedLoad() {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
-    page.value = 1
-    loadTracks()
-  }, 300)
-}
 
 function goToPage(p: number) {
   page.value = p
@@ -119,7 +112,6 @@ async function loadTracks() {
     const { data } = await trackApi.list({
       offset: (page.value - 1) * perPage,
       limit: perPage,
-      q: search.value || undefined,
     })
     tracks.value = data.items || []
     total.value = data.total
@@ -144,3 +136,27 @@ function formatDuration(sec: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 </script>
+
+<style scoped>
+.now-playing-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+.now-playing-bars > span {
+  display: block;
+  width: 3px;
+  background: white;
+  border-radius: 1px;
+  animation: now-playing-bar 0.8s ease-in-out infinite alternate;
+}
+.now-playing-bars > span:nth-child(1) { height: 40%; animation-delay: 0s; }
+.now-playing-bars > span:nth-child(2) { height: 70%; animation-delay: 0.2s; }
+.now-playing-bars > span:nth-child(3) { height: 50%; animation-delay: 0.4s; }
+
+@keyframes now-playing-bar {
+  from { height: 20%; }
+  to { height: 100%; }
+}
+</style>

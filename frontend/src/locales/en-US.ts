@@ -33,6 +33,8 @@ export default {
     tracks: 'tracks',
     delete: 'Delete',
     confirmDelete: 'Delete this playlist?',
+    created: 'Playlist created',
+    deleted: 'Playlist deleted',
   },
   search: {
     placeholder: 'Search tracks, artists, albums...',
@@ -67,5 +69,8 @@ export default {
     scanning: 'Scanning...',
     scanComplete: 'Scan Complete',
     uploadFile: 'Upload Audio File',
+  },
+  error: {
+    generic: 'Something went wrong',
   },
 }

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -68,6 +69,13 @@ func (rl *RateLimiter) getLimiter(ip string) *rate.Limiter {
 
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip rate limiting for static resources (covers, streams)
+		path := c.Request.URL.Path
+		if strings.HasSuffix(path, "/cover") || strings.HasSuffix(path, "/stream") {
+			c.Next()
+			return
+		}
+
 		ip := c.ClientIP()
 		limiter := rl.getLimiter(ip)
 

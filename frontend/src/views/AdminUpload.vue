@@ -45,6 +45,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 const { t } = useI18n()
 const files = ref<File[]>([])
@@ -70,6 +71,11 @@ async function upload() {
       results.value.push({ name: file.name, ok: false, message: msg })
     }
   }
+
+  const ok = results.value.filter(r => r.ok).length
+  const fail = results.value.filter(r => !r.ok).length
+  if (fail === 0) toast.success(`${ok} file(s) uploaded`)
+  else toast.warning(`${ok} uploaded, ${fail} failed`)
 
   uploading.value = false
   files.value = []

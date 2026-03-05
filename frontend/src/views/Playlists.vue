@@ -62,6 +62,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Plus, ListMusic } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -84,11 +85,13 @@ async function createPlaylist() {
   if (!newName.value) return
   try {
     await playlistApi.create(newName.value)
+    toast.success(t('playlist.created'))
     newName.value = ''
     showCreate.value = false
     await loadPlaylists()
   } catch (e) {
     console.error(e)
+    toast.error(t('error.generic'))
   }
 }
 </script>

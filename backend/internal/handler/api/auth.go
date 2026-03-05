@@ -15,10 +15,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func BootstrapStatus(authSvc *service.AuthService) gin.HandlerFunc {
+func BootstrapStatus(authSvc *service.AuthService, settingSvc *service.SettingsService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		accessMode := strings.TrimSpace(settingSvc.Get("access_mode"))
+		if accessMode == "" {
+			accessMode = "public"
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"bootstrapped": authSvc.IsBootstrapped(),
+			"access_mode":  accessMode,
 		})
 	}
 }

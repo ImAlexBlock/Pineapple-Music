@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Track } from '../types'
 import { trackApi, playEventApi } from '../api'
 
@@ -21,6 +21,16 @@ export const usePlayerStore = defineStore('player', () => {
       : null
   )
 
+  // Next track for preloading
+  const nextTrack = computed(() => {
+    if (queue.value.length === 0 || playMode.value === 'shuffle') return null
+    if (playMode.value === 'repeat-one') return currentTrack.value
+    const nextIdx = currentIndex.value + 1
+    if (nextIdx < queue.value.length) return queue.value[nextIdx]
+    if (playMode.value === 'repeat-all') return queue.value[0]
+    return null
+  })
+
   const playModeIcon = computed(() => {
     switch (playMode.value) {
       case 'sequential': return 'ArrowRight'
@@ -41,6 +51,9 @@ export const usePlayerStore = defineStore('player', () => {
 
   // Audio element singleton
   let audio: HTMLAudioElement | null = null
+  // Preload audio element for next track
+  let preloadAudio: HTMLAudioElement | null = null
+  let preloadedTrackId: number | null = null
 
   function getAudio(): HTMLAudioElement {
     if (!audio) {
@@ -64,6 +77,41 @@ export const usePlayerStore = defineStore('player', () => {
     return audio
   }
 
+  function preloadNext() {
+    const next = nextTrack.value
+    if (!next || next.id === preloadedTrackId) return
+    if (!preloadAudio) {
+      preloadAudio = new Audio()
+      preloadAudio.preload = 'auto'
+    }
+    preloadAudio.src = trackApi.streamUrl(next.id)
+    preloadedTrackId = next.id
+  }
+
+  // Watch for track changes and preload next
+  watch(currentIndex, () => {
+    preloadNext()
+  })
+
+  function updateMediaSession(track: Track) {
+    if (!('mediaSession' in navigator)) return
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.artist,
+      album: track.album,
+      artwork: track.has_cover
+        ? [{ src: trackApi.coverUrl(track.id), sizes: '512x512', type: 'image/jpeg' }]
+        : [],
+    })
+    navigator.mediaSession.setActionHandler('play', () => togglePlay())
+    navigator.mediaSession.setActionHandler('pause', () => togglePlay())
+    navigator.mediaSession.setActionHandler('previoustrack', () => previous())
+    navigator.mediaSession.setActionHandler('nexttrack', () => next())
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (details.seekTime != null) seek(details.seekTime)
+    })
+  }
+
   function play(track: Track, tracks?: Track[]) {
     if (tracks) {
       queue.value = [...tracks]
@@ -79,10 +127,43 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     const a = getAudio()
-    a.src = trackApi.streamUrl(track.id)
-    a.volume = volume.value
-    a.play()
 
+    // If the next track was preloaded and matches, swap the audio elements
+    if (preloadAudio && preloadedTrackId === track.id) {
+      // Swap preloaded audio in as the main player
+      const oldAudio = audio!
+      // Copy event listeners by replacing
+      preloadAudio.volume = volume.value
+      preloadAudio.addEventListener('timeupdate', () => {
+        currentTime.value = preloadAudio!.currentTime
+      })
+      preloadAudio.addEventListener('loadedmetadata', () => {
+        duration.value = preloadAudio!.duration
+      })
+      preloadAudio.addEventListener('ended', () => {
+        next()
+      })
+      preloadAudio.addEventListener('play', () => {
+        playing.value = true
+      })
+      preloadAudio.addEventListener('pause', () => {
+        playing.value = false
+      })
+      audio = preloadAudio
+      preloadAudio = null
+      preloadedTrackId = null
+      audio.play()
+      // Clean up old audio
+      oldAudio.pause()
+      oldAudio.removeAttribute('src')
+      oldAudio.load()
+    } else {
+      a.src = trackApi.streamUrl(track.id)
+      a.volume = volume.value
+      a.play()
+    }
+
+    updateMediaSession(track)
     playEventApi.record(track.id).catch(() => {})
   }
 
@@ -165,7 +246,7 @@ export const usePlayerStore = defineStore('player', () => {
 
   return {
     queue, currentIndex, playing, currentTime, duration, volume,
-    playMode, lyricsVisible, currentTrack,
+    playMode, lyricsVisible, currentTrack, nextTrack,
     playModeIcon, playModeLabel,
     play, togglePlay, seek, setVolume, next, previous,
     cyclePlayMode, toggleLyrics,

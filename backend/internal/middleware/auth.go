@@ -3,6 +3,7 @@ package middleware
 import (
 	"net"
 	"net/http"
+	"strings"
 
 	"pineapple-music/internal/service"
 	"pineapple-music/internal/util"
@@ -75,14 +76,16 @@ func OptionalAuth(authSvc *service.AuthService) gin.HandlerFunc {
 
 // AccessMode enforces private-mode access control.
 // In private mode (access_mode != "public"), unauthenticated requests are rejected.
+// Default (no setting stored) is "public" for ease of use.
 func AccessMode(authSvc *service.AuthService, settingSvc *service.SettingsService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		mode := settingSvc.Get("access_mode")
-		if mode == "public" {
+		mode := strings.TrimSpace(settingSvc.Get("access_mode"))
+		// Default to public when no setting exists
+		if mode == "" || strings.EqualFold(mode, "public") {
 			c.Next()
 			return
 		}
-		// Default is "private" — require authentication (guest or admin)
+		// "private" — require authentication (guest or admin)
 		role, exists := c.Get(ContextRole)
 		if !exists || role == nil || role == "" {
 			util.ErrorResponse(c, http.StatusUnauthorized, "unauthorized", "Login required (private mode)")

@@ -61,8 +61,8 @@ func Load() (*Config, error) {
 	v.SetDefault("port", 3880)
 	v.SetDefault("data_dir", "./data")
 	v.SetDefault("log_level", "info")
-	v.SetDefault("rate_limit_rps", 10.0)
-	v.SetDefault("rate_limit_burst", 20)
+	v.SetDefault("rate_limit_rps", 50.0)
+	v.SetDefault("rate_limit_burst", 100)
 	v.SetDefault("session_max_age", 86400) // 24h
 	v.SetDefault("secure_cookie", false)
 	v.SetDefault("max_upload_size", 52428800) // 50MB

@@ -97,7 +97,11 @@
 
     <!-- Main content -->
     <main class="mx-auto w-full max-w-5xl px-4 py-6" :class="{ 'pb-28': auth.bootstrapped && player.currentTrack }">
-      <router-view />
+      <router-view v-slot="{ Component, route: viewRoute }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" :key="viewRoute.path" />
+        </Transition>
+      </router-view>
     </main>
 
     <!-- Player bar -->
@@ -108,17 +112,19 @@
     </Transition>
     <LyricsPanel />
   </div>
+  <Toaster position="bottom-right" :theme="themeStore.isDark ? 'dark' : 'light'" rich-colors />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useThemeStore } from './stores/theme'
 import { usePlayerStore } from './stores/player'
 import PlayerBar from './components/player/PlayerBar.vue'
 import LyricsPanel from './components/player/LyricsPanel.vue'
+import { Toaster } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
@@ -132,6 +138,7 @@ import {
 
 const { t, locale } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const themeStore = useThemeStore()
 const player = usePlayerStore()

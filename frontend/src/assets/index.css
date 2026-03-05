@@ -269,3 +269,15 @@
   transform: translateY(100%);
   opacity: 0;
 }
+
+/* Page transition */
+.page-enter-active {
+  transition: opacity 0.2s ease-out;
+}
+.page-leave-active {
+  transition: opacity 0.15s ease-in;
+}
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}

@@ -52,7 +52,7 @@ func SetupRouter(db *gorm.DB, cfg *config.Config) *gin.Engine {
 		v1.Use(middleware.CSRF())
 
 		// Bootstrap — localhost only, no key returned over HTTP
-		v1.GET("/setup/status", api.BootstrapStatus(authSvc))
+		v1.GET("/setup/status", api.BootstrapStatus(authSvc, settingSvc))
 		setupGroup := v1.Group("/setup")
 		setupGroup.Use(middleware.LocalOnly())
 		setupGroup.Use(middleware.Turnstile(cfg.TurnstileSecret))

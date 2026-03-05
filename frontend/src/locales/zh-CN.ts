@@ -33,6 +33,8 @@ export default {
     tracks: '首曲目',
     delete: '删除',
     confirmDelete: '确认删除此歌单？',
+    created: '歌单已创建',
+    deleted: '歌单已删除',
   },
   search: {
     placeholder: '搜索曲目、艺术家、专辑...',
@@ -67,5 +69,8 @@ export default {
     scanning: '扫描中...',
     scanComplete: '扫描完成',
     uploadFile: '上传音频文件',
+  },
+  error: {
+    generic: '操作失败',
   },
 }

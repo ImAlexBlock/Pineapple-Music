@@ -63,6 +63,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { ScanSearch, Loader2, CheckCircle } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 const { t } = useI18n()
 const job = ref<ScanJob | null>(null)
@@ -90,9 +91,11 @@ async function startScan() {
   scanning.value = true
   try {
     await adminApi.startScan()
+    toast.info('Scan started')
     startPolling()
   } catch (e) {
     console.error(e)
+    toast.error('Failed to start scan')
   }
   scanning.value = false
 }
@@ -106,6 +109,7 @@ function startPolling() {
       if (data.status !== 'running') {
         clearInterval(pollTimer!)
         pollTimer = null
+        toast.success(`Scan complete: ${data.added} added, ${data.updated} updated`)
       }
     } catch {
       clearInterval(pollTimer!)

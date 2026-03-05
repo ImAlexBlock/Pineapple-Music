@@ -14,13 +14,12 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Handle 401 - redirect to login
+// Handle 401 — only redirect for explicitly protected calls, not for auth probing
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      window.location.href = '/login'
-    }
+    // Never auto-redirect on /auth/me, /setup/*, or /play-events failures
+    // These are expected to fail for unauthenticated visitors in public mode
     return Promise.reject(error)
   }
 )

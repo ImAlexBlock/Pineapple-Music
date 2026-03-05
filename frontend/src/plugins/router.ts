@@ -77,7 +77,7 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore()
 
-  // Check bootstrap status on first navigation
+  // Check bootstrap status on first navigation (deduplicated)
   if (!auth.checked) {
     await auth.checkStatus()
   }
@@ -92,9 +92,19 @@ router.beforeEach(async (to, _from, next) => {
     return next({ name: 'Home' })
   }
 
-  // Admin routes require admin role
+  // Admin routes require admin role — redirect to login only for admin pages
   if (to.meta.requiresAdmin && auth.role !== 'admin') {
     return next({ name: 'Login' })
+  }
+
+  // Private mode: unauthenticated visitors must log in
+  if (auth.accessMode === 'private' && !auth.role && to.name !== 'Login' && to.name !== 'Bootstrap') {
+    return next({ name: 'Login' })
+  }
+
+  // If visiting login page but already authenticated, go home
+  if (to.name === 'Login' && auth.role) {
+    return next({ name: 'Home' })
   }
 
   next()
